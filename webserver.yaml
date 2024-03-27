@@ -1,0 +1,105 @@
+- name: WebServer
+  hosts: Debian_webserver
+  become: true
+
+  vars:
+    packages_stage_1:
+      - git
+      - wget
+      - curl
+      - sudo
+      - fontconfig
+      - openjdk-17-jre
+      - ca-certificates
+    packages_stage_2:
+      - jenkins
+      - docker-ce
+      - docker-ce-cli
+      - containerd.io
+      - docker-buildx-plugin
+      - docker-compose-plugin
+
+  tasks:
+  
+  - name: Update packets library
+    apt:
+      update_cache: yes
+
+  - name: Upgrade installed packages
+    apt:
+      upgrade: yes
+  
+  - name: Install started packages
+    apt:
+      pkg: "{{packages_stage_1}}"
+      state: latest
+
+# Jenkins
+  - name: Download Jenkins key
+    get_url:
+      url: https://pkg.jenkins.io/debian-stable/jenkins.io-2023.key
+      dest: /usr/share/keyrings/jenkins-keyring.asc
+
+  - name: Add Jenkins repository to sources.list
+    lineinfile:
+      path: /etc/apt/sources.list.d/jenkins.list
+      line: 'deb [signed-by=/usr/share/keyrings/jenkins-keyring.asc] https://pkg.jenkins.io/debian-stable binary/'
+      create: yes
+
+# Docker
+  - name: Create directory for apt keyrings
+    file:
+      path: /etc/apt/keyrings
+      state: directory
+      mode: '0755'
+
+  - name: Download Docker GPG key
+    get_url:
+      url: https://download.docker.com/linux/debian/gpg
+      dest: /etc/apt/keyrings/docker.asc
+
+  - name: Change permissions for Docker GPG key
+    file:
+      path: /etc/apt/keyrings/docker.asc
+      mode: '0644'  
+
+  - name: Add Docker repository to sources.list
+    shell: echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] 
+          https://download.docker.com/linux/debian $(. /etc/os-release && echo "bookworm") 
+          stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+
+  - name: Update packets library 
+    apt:
+      update_cache: yes
+
+  - name: Update System
+    apt:
+      upgrade: yes
+
+  - name: Install final packages
+    apt:
+      pkg: "{{packages_stage_2}}"
+      state: latest
+
+  - name: Enable jenkins.service
+    service:
+      name: jenkins
+      state: started
+      enabled: yes
+
+  - name: Enable docker.service
+    service:
+      name: docker
+      state: started
+      enabled: yes
+
+  - name: Add user to docker group
+    command: usermod -aG docker cisco
+
+  - name: Read Jenkins Secret Key
+    command: cat /var/lib/jenkins/secrets/initialAdminPassword
+    register: file_contents
+
+  - name: Print Jenkins Secret Key
+    debug:
+      msg: "{{ file_contents.stdout }}"
