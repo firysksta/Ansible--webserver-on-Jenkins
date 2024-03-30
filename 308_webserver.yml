@@ -1,0 +1,6 @@
+- name: WebServer 
+  hosts: "{{Group}}"
+  become: true
+
+  roles:
+    - { role: webserver_preinstall, when ansible_os_family  == 'Debian' }

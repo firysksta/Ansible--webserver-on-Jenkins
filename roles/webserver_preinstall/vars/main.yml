@@ -1,0 +1,17 @@
+---
+# vars file for webserver_preinstall
+packages_stage_1:
+  - git
+  - wget
+  - curl
+  - sudo
+  - fontconfig
+  - openjdk-17-jre
+  - ca-certificates
+packages_stage_2:
+  - jenkins
+  - docker-ce
+  - docker-ce-cli
+  - containerd.io
+  - docker-buildx-plugin
+  - docker-compose-plugin
