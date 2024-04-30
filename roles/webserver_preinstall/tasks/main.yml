@@ -61,7 +61,7 @@
 
   - name: Add user to docker group
     ansible.builtin.user:
-      name: cisco
+      name: makemesad
       groups: docker
       append: true
 
@@ -76,6 +76,12 @@
       name: docker
       state: started
       enabled: true
+
+  - name: Add jenkins user to docker group
+    ansible.builtin.user:
+      name: jenkins
+      groups: docker
+      append: true
 
   - name: Read Jenkins Secret Key
     ansible.builtin.command: cat /var/lib/jenkins/secrets/initialAdminPassword
